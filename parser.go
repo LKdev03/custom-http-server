@@ -28,11 +28,38 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strconv"
 )
 
-func main() {
+type Request struct {
+	//request line
+	Host        string
+	Method      string
+	Target      string
+	HttpVersion string
+
+	//Headers
+	Connection       string
+	ContentType      string
+	Accept           string
+	ContentLength    int
+	TransferEncoding int
+
+	//Body
+	Body string
+}
+
+// Currently assumes the request does not come in chunks (not how TCP works).
+// TODO: change to handle TCP packets instead.
+
+// -1 error
+//
+//	1  content-length exists
+//	2  Transfer-Encoding exists
+//	3  neither exists exists
+func parseRequestLengthHeaders(request *Request) (int, error) {
 
 	requestString := "POST /api/users HTTP/1.1\r\n" +
 		"Host: example.com\r\n" +
@@ -73,21 +100,40 @@ func main() {
 
 			contentLength = append(contentLength, []byte(after)[i])
 		}
-		fmt.Println(contentLength)
 
 		contentLengthInt, err := strconv.Atoi(string(contentLength))
 		if err != nil {
-			//handle error, not necessary for this test script
+			//Cant get content-length value
+			return -1, errors.New("Cant parse content-length value\n")
 		}
 
 		fmt.Printf("contentLengthInt value is: %v and type is: %T\n", contentLengthInt, contentLengthInt)
+
+		request.ContentLength = contentLengthInt
+
+		return 1, nil
 
 	} else if isTransferEncoding {
 		//Parse Transfer Encoding
 
 		//TODO
+
+		return 2, nil
 	}
 
-	//fmt.Println(slice)
+	return 3, nil
+
+}
+
+func main() {
+
+	request := Request{}
+
+	//parseBodyFlag, err := parseRequestLengthHeaders(&request)
+	_, err := parseRequestLengthHeaders(&request)
+	if err != nil {
+		//
+		return
+	}
 
 }
