@@ -28,10 +28,8 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 )
 
@@ -46,8 +44,8 @@ type Request struct {
 	Connection       string
 	ContentType      string
 	Accept           string
-	ContentLength    int
-	TransferEncoding int
+	ContentLength    string // int
+	TransferEncoding string // int
 
 	//Body
 	Body string
@@ -61,7 +59,7 @@ type Request struct {
 //	1  content-length exists
 //	2  Transfer-Encoding exists
 //	3  neither exists exists
-func parseRequestLengthHeaders(request *Request) (int, error) {
+/* func parseRequestLengthHeaders(request *Request) (int, error) {
 
 	//example.com/user/getId
 
@@ -127,7 +125,7 @@ func parseRequestLengthHeaders(request *Request) (int, error) {
 
 	return 3, nil
 
-}
+} */
 
 //func parseField(string, )
 
