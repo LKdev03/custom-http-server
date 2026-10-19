@@ -129,7 +129,7 @@ type Request struct {
 
 //func parseField(string, )
 
-func parseString(str []byte, request *Request) error {
+func ParseLine(str []byte, request *Request, mode *int) error {
 
 	copy := str
 
@@ -152,6 +152,12 @@ func parseString(str []byte, request *Request) error {
 	fmt.Printf("before: %v and after: %v\n", string(before), string(after))
 
 	fieldName := string(before)
+
+	if fieldName == "Content-Length" {
+		*mode = 1
+	} else if fieldName == "Transfer-Encoding" {
+		*mode = 2
+	}
 
 	value, ok := transformations[string(before)]
 
@@ -193,13 +199,18 @@ func main() {
 
 	index := 0
 
+	//0 -> neither
+	//1 -> Content-Length
+	//2 -> Transfer-Encoding
+	mode := 0
+
 	for i := 0; i < len(slice); i++ {
 
 		if i+1 < len(slice) {
 
 			if slice[i] == 13 && slice[i+1] == 10 {
 
-				err := parseString(slice[index:i], &request)
+				err := ParseLine(slice[index:i], &request, &mode)
 				if err != nil {
 					fmt.Println("Error:", err)
 				}
@@ -209,6 +220,17 @@ func main() {
 
 	}
 
-	fmt.Println(request)
+	fmt.Println(mode)
+
+	if mode == 1 {
+
+		//Content-Length logic
+
+	} else if mode == 2 {
+
+		//Transfer-Encoding logic
+	}
+
+	return
 
 }
