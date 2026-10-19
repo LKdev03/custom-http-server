@@ -30,7 +30,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
+	"strings"
 )
 
 type Request struct {
@@ -60,6 +62,8 @@ type Request struct {
 //	2  Transfer-Encoding exists
 //	3  neither exists exists
 func parseRequestLengthHeaders(request *Request) (int, error) {
+
+	//example.com/user/getId
 
 	requestString := "POST /api/users HTTP/1.1\r\n" +
 		"Host: example.com\r\n" +
@@ -125,15 +129,88 @@ func parseRequestLengthHeaders(request *Request) (int, error) {
 
 }
 
+//func parseField(string, )
+
+func parseString(str []byte, request *Request) error {
+
+	copy := str
+
+	//Create a hashmap for turning raw input to struct fields:
+	// Content-Length -> ContentLength
+
+	transformations := map[string]string{
+		"Content-Length":    "ContentLength",
+		"Content-Type":      "ContentType",
+		"User-Agent":        "UserAgent",
+		"Accept-Language":   "AcceptLanguage",
+		"Accept-Encoding":   "AcceptEncoding",
+		"Cache-Control":     "CacheControl",
+		"If-None-Match":     "IfNoneMatch",
+		"Transfer-Encoding": "TransferEncoding",
+	}
+
+	before, after, _ := bytes.Cut(copy, []byte(":"))
+
+	fmt.Printf("before: %v and after: %v\n", string(before), string(after))
+
+	fieldName := string(before)
+
+	value, ok := transformations[string(before)]
+
+	if ok {
+		fieldName = value
+	}
+
+	//check if the field exists in the request body struct
+	t := reflect.ValueOf(request).Elem()
+	field := t.FieldByName(fieldName)
+
+	if !field.IsValid() {
+
+		return fmt.Errorf("unknown field: %s\n", fieldName)
+	}
+
+	if !field.CanSet() || field.Kind() != reflect.String {
+		return fmt.Errorf("Field %v cant be set as a string", fieldName)
+	}
+
+	field.SetString(strings.TrimSpace(string(after)))
+
+	return nil
+}
+
 func main() {
 
 	request := Request{}
 
-	//parseBodyFlag, err := parseRequestLengthHeaders(&request)
-	_, err := parseRequestLengthHeaders(&request)
-	if err != nil {
-		//
-		return
+	requestString := "POST /api/users HTTP/1.1\r\n" +
+		"Host: example.com\r\n" +
+		"Content-Type: application/json\r\n" +
+		"Accept: application/json\r\n" +
+		"Content-Length: 21\r\n" +
+		"\r\n" +
+		`{"name":"John"}`
+
+	slice := []byte(requestString)
+
+	index := 0
+
+	for i := 0; i < len(slice); i++ {
+
+		if i+1 < len(slice) {
+
+			if slice[i] == 13 && slice[i+1] == 10 {
+
+				err := parseString(slice[index:i], &request)
+				if err != nil {
+					fmt.Println("Error:", err)
+				}
+				index = i + 2
+			}
+		}
+
 	}
+
+	fmt.Println(request)
 
 }
