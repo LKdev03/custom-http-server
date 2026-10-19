@@ -149,7 +149,7 @@ func ParseLine(str []byte, request *Request, mode *int) error {
 
 	before, after, _ := bytes.Cut(copy, []byte(":"))
 
-	fmt.Printf("before: %v and after: %v\n", string(before), string(after))
+	//fmt.Printf("before: %v and after: %v\n", string(before), string(after))
 
 	fieldName := string(before)
 
@@ -181,6 +181,10 @@ func ParseLine(str []byte, request *Request, mode *int) error {
 	field.SetString(strings.TrimSpace(string(after)))
 
 	return nil
+}
+
+func ParseBody(mode int) error {
+	return fmt.Errorf("")
 }
 
 func main() {
@@ -218,18 +222,29 @@ func main() {
 			}
 		}
 
+		//If we find the http request delimiter (end of headers etc)
+		if i+3 < len(slice) {
+			if slice[i] == 13 && slice[i+1] == 10 && slice[i+2] == 13 && slice[i+3] == 10 {
+
+				index = i + 4
+
+				fmt.Println("Does this ever trigger?")
+
+				break
+			}
+		}
 	}
 
+	fmt.Println("mode is: ")
 	fmt.Println(mode)
 
+	// this or then parseBody(mode) which handles if-else logic
+
 	if mode == 1 {
-
-		//Content-Length logic
-
-	} else if mode == 2 {
-
-		//Transfer-Encoding logic
+		fmt.Println(string(slice[index:len(slice)]))
 	}
+
+	//ParseBody(mode)
 
 	return
 
